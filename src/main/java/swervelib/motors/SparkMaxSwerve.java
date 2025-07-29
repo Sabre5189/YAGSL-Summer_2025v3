@@ -20,8 +20,6 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import java.util.Optional;
 import java.util.function.Supplier;
-import swervelib.encoders.SparkMaxAnalogEncoderSwerve;
-import swervelib.encoders.SparkMaxEncoderSwerve;
 import swervelib.encoders.SwerveAbsoluteEncoder;
 import swervelib.parser.PIDFConfig;
 import swervelib.telemetry.SwerveDriveTelemetry;
@@ -96,13 +94,14 @@ public class SparkMaxSwerve extends SwerveMotor
   /**
    * Initialize the {@link SwerveMotor} as a {@link SparkMax} connected to a Brushless Motor.
    *
+   * @param busid        CAN BUS ID to use.
    * @param id           CAN ID of the SparkMax.
    * @param isDriveMotor Is the motor being initialized a drive motor?
    * @param motorType    Motor type controlled by the {@link SparkMax} motor controller.
    */
-  public SparkMaxSwerve(int id, boolean isDriveMotor, DCMotor motorType)
+  public SparkMaxSwerve(int busid, int id, boolean isDriveMotor, DCMotor motorType)
   {
-    this(new SparkMax(id, MotorType.kBrushless), isDriveMotor, motorType);
+    this(new SparkMax(busid, id, MotorType.kBrushless), isDriveMotor, motorType);
   }
 
   /**
@@ -263,15 +262,7 @@ public class SparkMaxSwerve extends SwerveMotor
       velocity = this.encoder::getVelocity;
       position = this.encoder::getPosition;
       burnFlash();
-    } else if (encoder instanceof SparkMaxAnalogEncoderSwerve || encoder instanceof SparkMaxEncoderSwerve)
-    {
-      cfg.closedLoop.feedbackSensor(encoder instanceof SparkMaxAnalogEncoderSwerve
-                                    ? FeedbackSensor.kAnalogSensor : FeedbackSensor.kAbsoluteEncoder);
-
-      this.absoluteEncoder = Optional.of(encoder);
-      velocity = this.absoluteEncoder.get()::getVelocity;
-      position = this.absoluteEncoder.get()::getAbsolutePosition;
-    }
+    } 
     return this;
   }
 

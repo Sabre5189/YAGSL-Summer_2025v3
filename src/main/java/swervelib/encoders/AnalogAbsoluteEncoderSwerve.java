@@ -100,7 +100,7 @@ public class AnalogAbsoluteEncoderSwerve extends SwerveAbsoluteEncoder
   @Override
   public double getAbsolutePosition()
   {
-    return (inverted ? -1.0 : 1.0) * (encoder.getAverageVoltage() / RobotController.getVoltage5V()) * 360;
+    return (inverted ? -1.0 : 1.0) * (encoder.getAverageVoltage() / RobotController.getVoltage3V3()) * 360;
   }
 
   /**

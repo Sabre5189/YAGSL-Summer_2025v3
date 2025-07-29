@@ -103,13 +103,14 @@ public class SparkFlexSwerve extends SwerveMotor
   /**
    * Initialize the {@link SwerveMotor} as a {@link SparkFlex} connected to a Brushless Motor.
    *
+   * @param busid        CAN Bus ID to use.
    * @param id           CAN ID of the SparkFlex.
    * @param isDriveMotor Is the motor being initialized a drive motor?
    * @param motorType    {@link DCMotor} which the {@link SparkFlex} is attached to.
    */
-  public SparkFlexSwerve(int id, boolean isDriveMotor, DCMotor motorType)
+  public SparkFlexSwerve(int busid, int id, boolean isDriveMotor, DCMotor motorType)
   {
-    this(new SparkFlex(id, MotorType.kBrushless), isDriveMotor, motorType);
+    this(new SparkFlex(busid, id, MotorType.kBrushless), isDriveMotor, motorType);
   }
 
   /**

@@ -1,7 +1,5 @@
 package swervelib;
 
-import static edu.wpi.first.hal.FRCNetComm.tInstances.kRobotDriveSwerve_YAGSL;
-import static edu.wpi.first.hal.FRCNetComm.tResourceType.kResourceType_RobotDrive;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.KilogramSquareMeters;
 import static edu.wpi.first.units.Units.Kilograms;
@@ -333,7 +331,7 @@ public class SwerveDrive implements AutoCloseable
 
     checkIfTunerXCompatible();
 
-    HAL.report(kResourceType_RobotDrive, kRobotDriveSwerve_YAGSL);
+    // HAL.report(kResourceType_RobotDrive, kRobotDriveSwerve_YAGSL);
   }
 
   @Override
@@ -487,7 +485,7 @@ public class SwerveDrive implements AutoCloseable
                                                  ChassisSpeeds robotOrientedVelocity)
   {
 
-    drive(ChassisSpeeds.fromFieldRelativeSpeeds(fieldOrientedVelocity, getOdometryHeading())
+    drive(fieldOrientedVelocity.toRobotRelative(getOdometryHeading())
                        .plus(robotOrientedVelocity));
   }
 
@@ -498,7 +496,7 @@ public class SwerveDrive implements AutoCloseable
    */
   public void driveFieldOriented(ChassisSpeeds fieldRelativeSpeeds)
   {
-    drive(ChassisSpeeds.fromFieldRelativeSpeeds(fieldRelativeSpeeds, getOdometryHeading()));
+    drive(fieldRelativeSpeeds.toRobotRelative(getOdometryHeading()));
   }
 
   /**
@@ -509,7 +507,7 @@ public class SwerveDrive implements AutoCloseable
    */
   public void driveFieldOriented(ChassisSpeeds fieldRelativeSpeeds, Translation2d centerOfRotationMeters)
   {
-    drive(ChassisSpeeds.fromFieldRelativeSpeeds(fieldRelativeSpeeds, getOdometryHeading()), centerOfRotationMeters);
+    drive(fieldRelativeSpeeds.toRobotRelative(getOdometryHeading()), centerOfRotationMeters);
   }
 
   /**
@@ -560,7 +558,7 @@ public class SwerveDrive implements AutoCloseable
     ChassisSpeeds velocity = new ChassisSpeeds(translation.getX(), translation.getY(), rotation);
     if (fieldRelative)
     {
-      velocity = ChassisSpeeds.fromFieldRelativeSpeeds(velocity, getOdometryHeading());
+      velocity = velocity.toRobotRelative(getOdometryHeading());
     }
     drive(velocity, isOpenLoop, centerOfRotationMeters);
   }
@@ -589,7 +587,7 @@ public class SwerveDrive implements AutoCloseable
 
     if (fieldRelative)
     {
-      velocity = ChassisSpeeds.fromFieldRelativeSpeeds(velocity, getOdometryHeading());
+      velocity = velocity.toRobotRelative(getOdometryHeading());
     }
     drive(velocity, isOpenLoop, new Translation2d());
   }
@@ -615,11 +613,11 @@ public class SwerveDrive implements AutoCloseable
     // Modified by Team 7525 Pioneers and BoiledBurntBagel of 6036
     if (headingCorrection)
     {
-      if (Math.abs(robotRelativeVelocity.omegaRadiansPerSecond) < HEADING_CORRECTION_DEADBAND
-          && (Math.abs(robotRelativeVelocity.vxMetersPerSecond) > HEADING_CORRECTION_DEADBAND
-              || Math.abs(robotRelativeVelocity.vyMetersPerSecond) > HEADING_CORRECTION_DEADBAND))
+      if (Math.abs(robotRelativeVelocity.omega) < HEADING_CORRECTION_DEADBAND
+          && (Math.abs(robotRelativeVelocity.vx) > HEADING_CORRECTION_DEADBAND
+              || Math.abs(robotRelativeVelocity.vy) > HEADING_CORRECTION_DEADBAND))
       {
-        robotRelativeVelocity.omegaRadiansPerSecond =
+        robotRelativeVelocity.omega =
             swerveController.headingCalculate(getOdometryHeading().getRadians(), lastHeadingRadians);
       } else
       {
@@ -797,7 +795,7 @@ public class SwerveDrive implements AutoCloseable
       double  wheelRadiusMeters = Units.inchesToMeters(module.configuration.conversionFactors.drive.diameter) / 2;
 
       // calculation:
-      double desiredGroundSpeedMPS = states[module.moduleNumber].speedMetersPerSecond;
+      double desiredGroundSpeedMPS = states[module.moduleNumber].speed;
       double feedforwardVoltage = driveMotorModel.getVoltage(
           // Since: (1) torque = force * momentOfForce; (2) torque (on wheel) = torque (on motor) * gearRatio
           // torque (on motor) = force * wheelRadius / gearRatio
@@ -887,7 +885,7 @@ public class SwerveDrive implements AutoCloseable
     // but not the reverse.  However, because this transform is a simple rotation, negating the
     // angle given as the robot angle reverses the direction of rotation, and the conversion is reversed.
     ChassisSpeeds robotRelativeSpeeds = kinematics.toChassisSpeeds(getStates());
-    return ChassisSpeeds.fromRobotRelativeSpeeds(robotRelativeSpeeds, getOdometryHeading());
+    return robotRelativeSpeeds.toFieldRelative(getOdometryHeading());
     // Might need to be this instead
     //return ChassisSpeeds.fromFieldRelativeSpeeds(
     //        kinematics.toChassisSpeeds(getStates()), getOdometryHeading().unaryMinus());
@@ -919,7 +917,7 @@ public class SwerveDrive implements AutoCloseable
       mapleSimDrive.setSimulationWorldPose(pose);
     }
     odometryLock.unlock();
-    ChassisSpeeds robotRelativeSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(new ChassisSpeeds(0, 0, 0), getYaw());
+    ChassisSpeeds robotRelativeSpeeds = new ChassisSpeeds(0, 0, 0).toRobotRelative(getYaw());
     kinematics.toSwerveModuleStates(robotRelativeSpeeds);
 
   }
@@ -1211,7 +1209,7 @@ public class SwerveDrive implements AutoCloseable
       for (SwerveModule module : swerveModules)
       {
         SwerveModuleState moduleState = module.getState();
-        sumVelocity += Math.abs(moduleState.speedMetersPerSecond);
+        sumVelocity += Math.abs(moduleState.speed);
         if (SwerveDriveTelemetry.verbosity == TelemetryVerbosity.HIGH)
         {
           module.updateTelemetry();
@@ -1559,9 +1557,9 @@ public class SwerveDrive implements AutoCloseable
     var angularVelocity = new Rotation2d(imu.getYawAngularVelocity().in(RadiansPerSecond) * angularVelocityCoefficient);
     if (angularVelocity.getRadians() != 0.0)
     {
-      ChassisSpeeds fieldRelativeVelocity = ChassisSpeeds.fromRobotRelativeSpeeds(robotRelativeVelocity,
+      ChassisSpeeds fieldRelativeVelocity = robotRelativeVelocity.toFieldRelative(
                                                                                   getOdometryHeading());
-      robotRelativeVelocity = ChassisSpeeds.fromFieldRelativeSpeeds(fieldRelativeVelocity,
+      robotRelativeVelocity = fieldRelativeVelocity.toRobotRelative(
                                                                     getOdometryHeading().plus(angularVelocity));
     }
     return robotRelativeVelocity;
@@ -1588,7 +1586,7 @@ public class SwerveDrive implements AutoCloseable
     // https://www.chiefdelphi.com/t/whitepaper-swerve-drive-skew-and-second-order-kinematics/416964/5
     if (uesChassisDiscretize)
     {
-      robotRelativeVelocity = ChassisSpeeds.discretize(robotRelativeVelocity, discretizationdtSeconds);
+      robotRelativeVelocity = robotRelativeVelocity.discretize(discretizationdtSeconds);
     }
 
     return robotRelativeVelocity;

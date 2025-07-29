@@ -342,7 +342,7 @@ public class SwerveDriveTest
   public static void logDriveMotorActivity(SwerveModule module, SysIdRoutineLog log, Supplier<Double> powerSupplied)
   {
     double power    = powerSupplied.get();
-    double distance = module.getPosition().distanceMeters;
+    double distance = module.getPosition().distance;
     double velocity = module.getDriveMotor().getVelocity();
     SmartDashboard.putNumber("swerve/modules/" + module.configuration.name + "/SysId Drive Power", power);
     SmartDashboard.putNumber("swerve/modules/" + module.configuration.name + "/SysId Drive Position", distance);
@@ -486,11 +486,11 @@ public class SwerveDriveTest
                                              double dynamicTimeout)
   {
     return sysIdRoutine.quasistatic(SysIdRoutine.Direction.kForward).withTimeout(quasiTimeout)
-                       .andThen(Commands.waitSeconds(delay))
+                       .andThen(Commands.wait(delay))
                        .andThen(sysIdRoutine.quasistatic(SysIdRoutine.Direction.kReverse).withTimeout(quasiTimeout))
-                       .andThen(Commands.waitSeconds(delay))
+                       .andThen(Commands.wait(delay))
                        .andThen(sysIdRoutine.dynamic(SysIdRoutine.Direction.kForward).withTimeout(dynamicTimeout))
-                       .andThen(Commands.waitSeconds(delay))
+                       .andThen(Commands.wait(delay))
                        .andThen(sysIdRoutine.dynamic(SysIdRoutine.Direction.kReverse).withTimeout(dynamicTimeout));
   }
 }

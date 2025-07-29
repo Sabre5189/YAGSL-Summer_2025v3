@@ -792,7 +792,7 @@ public class SwerveInputStream implements Supplier<ChassisSpeeds>
   {
     if (robotRelative.isPresent() && robotRelative.get().getAsBoolean())
     {
-      return ChassisSpeeds.fromRobotRelativeSpeeds(fieldRelativeSpeeds, swerveDrive.getOdometryHeading());
+      return fieldRelativeSpeeds.toRobotRelative(swerveDrive.getOdometryHeading());
     }
     return fieldRelativeSpeeds;
   }
@@ -835,9 +835,9 @@ public class SwerveInputStream implements Supplier<ChassisSpeeds>
     {
       if (translationHeadingOffset.isPresent())
       {
-        Translation2d speedsTranslation = new Translation2d(speeds.vxMetersPerSecond,
-                                                            speeds.vyMetersPerSecond).rotateBy(translationHeadingOffset.get());
-        return new ChassisSpeeds(speedsTranslation.getX(), speedsTranslation.getY(), speeds.omegaRadiansPerSecond);
+        Translation2d speedsTranslation = new Translation2d(speeds.vx,
+                                                            speeds.vy).rotateBy(translationHeadingOffset.get());
+        return new ChassisSpeeds(speedsTranslation.getX(), speedsTranslation.getY(), speeds.omega);
       }
     }
     return speeds;
@@ -968,13 +968,14 @@ public class SwerveInputStream implements Supplier<ChassisSpeeds>
                                               .toVector().minus(robotVec);
 
         currentMode = newMode;
-        speeds = ChassisSpeeds.fromRobotRelativeSpeeds(new ChassisSpeeds(
+        speeds = new ChassisSpeeds(
                                                            robotForwardVec.norm() * traversalVector.dot(robotForwardVec),
                                                            robotLateralVec.norm() * traversalVector.dot(robotLateralVec),
                                                            rotationPIDController.calculate(robotPose.getRotation().getRadians(),
-                                                                                           swervePoseSetpoint.getRotation().getRadians())),
+                                                                                           swervePoseSetpoint.getRotation()
+                                                                                                             .getRadians())).toFieldRelative(
                                                        swerveDrive.getOdometryHeading());
-        double lerpDistance = robotPose.getTranslation().plus(new Translation2d(speeds.vxMetersPerSecond,
+        double lerpDistance = robotPose.getTranslation().plus(new Translation2d(speeds.vx,
                                                                                 vyMetersPerSecond).times(0.02))
                                        .getDistance(swervePoseSetpoint.getTranslation());
         // Filter out incorrect ChassisSpeeds.

@@ -17,10 +17,8 @@ import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import swervelib.encoders.SparkMaxEncoderSwerve;
 import swervelib.encoders.SwerveAbsoluteEncoder;
 import swervelib.math.SwerveMath;
-import swervelib.motors.SparkMaxBrushedMotorSwerve;
 import swervelib.motors.SparkMaxSwerve;
 import swervelib.motors.SwerveMotor;
 import swervelib.parser.Cache;
@@ -305,7 +303,7 @@ public class SwerveModule implements AutoCloseable
    */
   public SimpleMotorFeedforward getDefaultFeedforward()
   {
-    double nominalVoltage   = driveMotor.getSimMotor().nominalVoltageVolts;
+    double nominalVoltage = driveMotor.getSimMotor().nominalVoltage;
     double maxDriveSpeedMPS = getMaxVelocity().in(MetersPerSecond);
     return SwerveMath.createDriveFeedforward(nominalVoltage,
                                              maxDriveSpeedMPS,
@@ -480,14 +478,13 @@ public class SwerveModule implements AutoCloseable
     // Cosine compensation.
     double nextVelocityMetersPerSecond = configuration.useCosineCompensator
                                          ? getCosineCompensatedVelocity(desiredState)
-                                         : desiredState.speedMetersPerSecond;
-    double curVelocityMetersPerSecond = lastState.speedMetersPerSecond;
-    desiredState.speedMetersPerSecond = nextVelocityMetersPerSecond;
+                                         : desiredState.speed;
+    double curVelocityMetersPerSecond = lastState.speed;
+    desiredState.speed = nextVelocityMetersPerSecond;
 
     setDesiredState(desiredState,
                     isOpenLoop,
-                    driveMotorFeedforward.calculateWithVelocities(curVelocityMetersPerSecond,
-                                                                  nextVelocityMetersPerSecond));
+                    driveMotorFeedforward.calculate(curVelocityMetersPerSecond));
   }
 
   /**
@@ -503,11 +500,11 @@ public class SwerveModule implements AutoCloseable
   {
     if (isOpenLoop)
     {
-      double percentOutput = desiredState.speedMetersPerSecond / maxDriveVelocity.in(MetersPerSecond);
+      double percentOutput = desiredState.speed / maxDriveVelocity.in(MetersPerSecond);
       driveMotor.setVoltage(percentOutput * 12);
     } else
     {
-      driveMotor.setReference(desiredState.speedMetersPerSecond, driveFeedforwardVoltage);
+      driveMotor.setReference(desiredState.speed, driveFeedforwardVoltage);
     }
 
     // Prevent module rotation if angle is the same as the previous angle.
@@ -541,7 +538,7 @@ public class SwerveModule implements AutoCloseable
 
     if (SwerveDriveTelemetry.verbosity == TelemetryVerbosity.HIGH)
     {
-      speedSetpointPublisher.set(desiredState.speedMetersPerSecond);
+      speedSetpointPublisher.set(desiredState.speed);
       angleSetpointPublisher.set(desiredState.angle.getDegrees());
     }
 
@@ -575,7 +572,7 @@ public class SwerveModule implements AutoCloseable
       cosineScalar = 1;
     }
 
-    return desiredState.speedMetersPerSecond * cosineScalar;
+    return desiredState.speed * cosineScalar;
   }
 
   /**
@@ -854,21 +851,6 @@ public class SwerveModule implements AutoCloseable
     if (absoluteEncoder != null && angleOffset == configuration.angleOffset)
     {
       // If the absolute encoder is attached.
-      if (angleMotor instanceof SparkMaxSwerve || angleMotor instanceof SparkMaxBrushedMotorSwerve)
-      {
-        if (absoluteEncoder instanceof SparkMaxEncoderSwerve)
-        {
-          angleMotor.setAbsoluteEncoder(absoluteEncoder);
-          if (absoluteEncoder.setAbsoluteEncoderOffset(angleOffset))
-          {
-            angleOffset = 0;
-          } else
-          {
-            angleMotor.setAbsoluteEncoder(null);
-            encoderOffsetWarning.set(true);
-          }
-        }
-      }
 
     } else
     {
@@ -924,7 +906,7 @@ public class SwerveModule implements AutoCloseable
     if (maxDriveVelocity == null)
     {
       maxDriveVelocity = InchesPerSecond.of(
-          (driveMotor.getSimMotor().freeSpeedRadPerSec /
+          (driveMotor.getSimMotor().freeSpeed /
            configuration.conversionFactors.drive.gearRatio) *
           configuration.conversionFactors.drive.diameter / 2.0);
       maxDriveVelocityMetersPerSecond = maxDriveVelocity.in(MetersPerSecond);
@@ -942,7 +924,7 @@ public class SwerveModule implements AutoCloseable
     if (maxAngularVelocity == null)
     {
       maxAngularVelocity = RotationsPerSecond.of(
-          RadiansPerSecond.of(angleMotor.getSimMotor().freeSpeedRadPerSec).in(RotationsPerSecond) /
+          RadiansPerSecond.of(angleMotor.getSimMotor().freeSpeed).in(RotationsPerSecond) /
           configuration.conversionFactors.angle.gearRatio);
     }
     return maxAngularVelocity;
@@ -962,8 +944,8 @@ public class SwerveModule implements AutoCloseable
       SwerveModulePosition pos   = simModule.getPosition();
       SwerveModuleState    state = simModule.getState();
       rawAnglePublisher.set(pos.angle.getDegrees());
-      rawDriveEncoderPublisher.set(pos.distanceMeters);
-      rawDriveVelocityPublisher.set(state.speedMetersPerSecond);
+      rawDriveEncoderPublisher.set(pos.distance);
+      rawDriveVelocityPublisher.set(state.speed);
       // For code coverage
       angleMotor.getPosition();
       drivePositionCache.getValue();

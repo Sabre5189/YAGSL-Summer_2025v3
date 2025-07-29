@@ -385,7 +385,7 @@ public class SwerveMath
    */
   public static void antiJitter(SwerveModuleState moduleState, SwerveModuleState lastModuleState, double maxSpeed)
   {
-    if (Math.abs(moduleState.speedMetersPerSecond) <= (maxSpeed * 0.01))
+    if (Math.abs(moduleState.speed) <= (maxSpeed * 0.01))
     {
       moduleState.angle = lastModuleState.angle;
     }

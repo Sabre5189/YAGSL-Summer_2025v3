@@ -428,13 +428,13 @@ public class SwerveDriveTelemetry
     {
       updateSwerveTelemetrySettings();
     }
-    measuredChassisSpeeds[0] = measuredChassisSpeedsObj.vxMetersPerSecond;
-    measuredChassisSpeeds[1] = measuredChassisSpeedsObj.vyMetersPerSecond;
-    measuredChassisSpeeds[2] = Math.toDegrees(measuredChassisSpeedsObj.omegaRadiansPerSecond);
+    measuredChassisSpeeds[0] = measuredChassisSpeedsObj.vx;
+    measuredChassisSpeeds[1] = measuredChassisSpeedsObj.vy;
+    measuredChassisSpeeds[2] = Math.toDegrees(measuredChassisSpeedsObj.omega);
 
-    desiredChassisSpeeds[0] = desiredChassisSpeedsObj.vxMetersPerSecond;
-    desiredChassisSpeeds[1] = desiredChassisSpeedsObj.vyMetersPerSecond;
-    desiredChassisSpeeds[2] = Math.toDegrees(desiredChassisSpeedsObj.omegaRadiansPerSecond);
+    desiredChassisSpeeds[0] = desiredChassisSpeedsObj.vx;
+    desiredChassisSpeeds[1] = desiredChassisSpeedsObj.vy;
+    desiredChassisSpeeds[2] = Math.toDegrees(desiredChassisSpeedsObj.omega);
 
     robotRotation = robotRotationObj.getDegrees();
 
@@ -444,7 +444,7 @@ public class SwerveDriveTelemetry
       if (state != null)
       {
         measuredStates[i * 2] = state.angle.getDegrees();
-        measuredStates[i * 2 + 1] = state.speedMetersPerSecond;
+        measuredStates[i * 2 + 1] = state.speed;
       }
     }
 
@@ -454,7 +454,7 @@ public class SwerveDriveTelemetry
       if (state != null)
       {
         desiredStates[i * 2] = state.angle.getDegrees();
-        desiredStates[i * 2 + 1] = state.speedMetersPerSecond;
+        desiredStates[i * 2 + 1] = state.speed;
       }
     }
 

@@ -60,7 +60,7 @@ public class SwerveController
    */
   public static Translation2d getTranslation2d(ChassisSpeeds speeds)
   {
-    return new Translation2d(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond);
+    return new Translation2d(speeds.vx, speeds.vy);
   }
 
   /**
